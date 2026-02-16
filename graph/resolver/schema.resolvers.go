@@ -135,7 +135,7 @@ func (r *mutationResolver) CreateReport(ctx context.Context, input model.CreateR
 
 	// Process photo uploads
 	photos := bson.A{}
-	if input.Photos != nil && len(input.Photos) > 0 {
+	if len(input.Photos) > 0 {
 		const maxPhotos = 10
 		const maxPhotoSize = 2 * 1024 * 1024 // 2MB
 
@@ -273,7 +273,7 @@ func (r *mutationResolver) UpdateReport(ctx context.Context, id string, input mo
 	}
 
 	// Handle new photo uploads
-	if input.Photos != nil && len(input.Photos) > 0 {
+	if len(input.Photos) > 0 {
 		const maxPhotos = 10
 		const maxPhotoSize = 2 * 1024 * 1024 // 2MB
 
@@ -786,7 +786,10 @@ func (r *queryResolver) Me(ctx context.Context) (*model.User, error) {
 
 // Reports is the resolver for the reports field.
 func (r *queryResolver) Reports(ctx context.Context, limit *int) ([]*model.Report, error) {
-	currentUser, _ := getCurrentUserFromContext(ctx)
+	currentUser, err := getCurrentUserFromContext(ctx)
+	if err != nil {
+		currentUser = nil
+	}
 
 	reportLimit := 20
 	if limit != nil {
@@ -816,8 +819,10 @@ func (r *queryResolver) Report(ctx context.Context, id string) (*model.Report, e
 		return nil, fmt.Errorf("invalid id")
 	}
 
-	currentUser, _ := getCurrentUserFromContext(ctx)
-
+	currentUser, authErr := getCurrentUserFromContext(ctx)
+	if authErr != nil {
+		currentUser = nil
+	}
 	reportDoc, err := r.reportRepo.FindByID(ctx, id)
 	if err != nil {
 		return nil, fmt.Errorf("report not found")
@@ -991,7 +996,10 @@ func (r *queryResolver) Chat(ctx context.Context, query string) (*model.ChatResp
 
 // Registrations is the resolver for the registrations field.
 func (r *queryResolver) Registrations(ctx context.Context, competitionID string) ([]*model.Registration, error) {
-	currentUser, _ := getCurrentUserFromContext(ctx)
+	currentUser, err := getCurrentUserFromContext(ctx)
+	if err != nil {
+		currentUser = nil
+	}
 	currentUserID := ""
 	if currentUser != nil {
 		currentUserID = currentUser.ID

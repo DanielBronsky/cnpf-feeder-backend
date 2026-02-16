@@ -507,7 +507,7 @@ func (u *UseCaseImpl) CreateReport(ctx context.Context, userID string, title, te
 
 	// Process photo uploads
 	photosList := make([]interface{}, 0)
-	if photos != nil && len(photos) > 0 {
+	if len(photos) > 0 {
 		const maxPhotos = 10
 		const maxPhotoSize = 2 * 1024 * 1024 // 2MB
 
@@ -648,7 +648,7 @@ func (u *UseCaseImpl) UpdateReport(ctx context.Context, userID string, id string
 	}
 
 	// Handle new photo uploads
-	if photos != nil && len(photos) > 0 {
+	if len(photos) > 0 {
 		const maxPhotos = 10
 		const maxPhotoSize = 2 * 1024 * 1024 // 2MB
 

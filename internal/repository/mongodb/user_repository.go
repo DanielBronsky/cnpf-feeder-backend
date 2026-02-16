@@ -73,7 +73,7 @@ func fromEntity(user *entity.User) (*UserDocument, error) {
 	}
 	
 	var avatar bson.M
-	if user.Avatar != nil && len(user.Avatar) > 0 {
+	if len(user.Avatar) > 0 {
 		avatar = bson.M{}
 		for k, v := range user.Avatar {
 			avatar[k] = v
@@ -172,7 +172,7 @@ func (r *UserRepository) Update(ctx context.Context, id string, user *entity.Use
 
 // FindAll finds all users
 func (r *UserRepository) FindAll(ctx context.Context) ([]*entity.User, error) {
-	cursor, err := r.db.Collection("users").Find(ctx, bson.M{}, options.Find().SetSort(bson.D{{"createdAt", -1}}))
+	cursor, err := r.db.Collection("users").Find(ctx, bson.M{}, options.Find().SetSort(bson.D{{Key: "createdAt", Value: -1}}))
 	if err != nil {
 		return nil, err
 	}

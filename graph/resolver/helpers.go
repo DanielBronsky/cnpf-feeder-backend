@@ -8,15 +8,13 @@ import (
 
 	"github.com/gin-gonic/gin"
 
+	"github.com/cnpf/feeder-backend/graph"
 	"github.com/cnpf/feeder-backend/internal/auth"
 )
 
 // GetGinContext extracts Gin context from GraphQL context
 func GetGinContext(ctx context.Context) *gin.Context {
-	if gc, ok := ctx.Value("ginContext").(*gin.Context); ok {
-		return gc
-	}
-	return nil
+	return graph.GetGinContext(ctx)
 }
 
 // getCurrentUserFromContext extracts current user from context

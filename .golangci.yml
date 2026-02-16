@@ -10,9 +10,12 @@ linters:
     - ineffassign
     - staticcheck
     - typecheck
-    # unused — временно отключён (helpers для будущих фич)
+  disable:
+    - unused # helpers для будущих фич
 
 linters-settings:
   errcheck:
     check-type-assertions: true
     check-blank: true
+  staticcheck:
+    checks: ["-S1001"] # цикл с model.Photo трансформирует, copy() не подходит

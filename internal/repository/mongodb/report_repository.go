@@ -132,15 +132,15 @@ func (r *ReportRepository) FindByID(ctx context.Context, id string) (*entity.Rep
 // FindAll finds all reports with limit
 func (r *ReportRepository) FindAll(ctx context.Context, limit int) ([]*entity.Report, error) {
 	pipeline := mongo.Pipeline{
-		{{"$sort", bson.D{{"createdAt", -1}, {"_id", -1}}}},
-		{{"$limit", limit}},
-		{{"$lookup", bson.D{
-			{"from", "users"},
-			{"localField", "authorId"},
-			{"foreignField", "_id"},
-			{"as", "author"},
+		{{Key: "$sort", Value: bson.D{{Key: "createdAt", Value: -1}, {Key: "_id", Value: -1}}}},
+		{{Key: "$limit", Value: limit}},
+		{{Key: "$lookup", Value: bson.D{
+			{Key: "from", Value: "users"},
+			{Key: "localField", Value: "authorId"},
+			{Key: "foreignField", Value: "_id"},
+			{Key: "as", Value: "author"},
 		}}},
-		{{"$unwind", bson.D{{"path", "$author"}, {"preserveNullAndEmptyArrays", true}}}},
+		{{Key: "$unwind", Value: bson.D{{Key: "path", Value: "$author"}, {Key: "preserveNullAndEmptyArrays", Value: true}}}},
 	}
 	
 	cursor, err := r.db.Collection("reports").Aggregate(ctx, pipeline)

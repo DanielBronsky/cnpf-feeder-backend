@@ -15,6 +15,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 
+	"github.com/cnpf/feeder-backend/graph"
 	"github.com/cnpf/feeder-backend/graph/generated"
 	"github.com/cnpf/feeder-backend/graph/resolver"
 	"github.com/cnpf/feeder-backend/internal/auth"
@@ -153,7 +154,7 @@ func graphqlHandler(resolver *resolver.Resolver) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		// Pass Gin context to GraphQL handler
 		ctx := c.Request.Context()
-		ctx = context.WithValue(ctx, "ginContext", c)
+		ctx = context.WithValue(ctx, graph.GinContextKey, c)
 		c.Request = c.Request.WithContext(ctx)
 		
 		h.ServeHTTP(c.Writer, c.Request)

@@ -191,7 +191,7 @@ func (r *CompetitionRepository) FindByID(ctx context.Context, id string) (*entit
 
 // FindAll finds all competitions
 func (r *CompetitionRepository) FindAll(ctx context.Context) ([]*entity.Competition, error) {
-	cursor, err := r.db.Collection("competitions").Find(ctx, bson.M{}, options.Find().SetSort(bson.D{{"createdAt", -1}}))
+	cursor, err := r.db.Collection("competitions").Find(ctx, bson.M{}, options.Find().SetSort(bson.D{{Key: "createdAt", Value: -1}}))
 	if err != nil {
 		return nil, err
 	}
