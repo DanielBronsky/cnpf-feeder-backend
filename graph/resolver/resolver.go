@@ -32,8 +32,11 @@ type Resolver struct {
 // TEMPORARY: Accepts repositories for backward compatibility during migration
 // TODO: Remove repository parameters after migration
 func NewResolver(useCase usecase.UseCase, userRepo repository.UserRepository, reportRepo repository.ReportRepository, competitionRepo repository.CompetitionRepository, registrationRepo repository.RegistrationRepository, db *mongo.Database) *Resolver {
-	geminiClient, _ := gemini.NewClient() // Ignore error, will handle in resolver
-	
+	geminiClient, err := gemini.NewClient()
+	if err != nil {
+		geminiClient = nil // Fallback: chat features disabled if Gemini unavailable
+	}
+
 	return &Resolver{
 		useCase:         useCase,
 		userRepo:        userRepo,

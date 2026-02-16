@@ -99,7 +99,10 @@ func SearchReports(ctx context.Context, db *mongo.Database, query string) ([]Sea
 		
 		// Only include results with sufficient relevance
 		if score > 0 && matchingWordsCount >= minRequiredWords {
-			photos, _ := doc["photos"].(bson.A)
+			photos, ok := doc["photos"].(bson.A)
+			if !ok {
+				photos = bson.A{}
+			}
 			photosCount := len(photos)
 
 			scoredResults = append(scoredResults, scoredResult{
@@ -228,8 +231,11 @@ func SearchAll(ctx context.Context, db *mongo.Database, query string) ([]SearchR
 			if variant == query {
 				continue // Skip if same as original
 			}
-			fallbackReports, _ := SearchReports(ctx, db, variant)
-			fallbackCompetitions, _ := SearchCompetitions(ctx, db, variant)
+			fallbackReports, err1 := SearchReports(ctx, db, variant)
+			fallbackCompetitions, err2 := SearchCompetitions(ctx, db, variant)
+			if err1 != nil || err2 != nil {
+				continue
+			}
 			if len(fallbackReports) > 0 || len(fallbackCompetitions) > 0 {
 				results = append(fallbackReports, fallbackCompetitions...)
 				break // Found results, stop trying variants
