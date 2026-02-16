@@ -1,0 +1,53 @@
+# docker-compose.yml
+# Поднимает три сервиса: frontend (Next.js), backend (GraphQL API), mongo (MongoDB)
+
+services:
+  mongo:
+    image: mongo:7
+    restart: unless-stopped
+    volumes:
+      - mongo_data:/data/db
+    ports:
+      - "27017:27017"
+    networks:
+      - cnpf-network
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    depends_on:
+      - mongo
+    ports:
+      - "4000:4000"
+    environment:
+      MONGODB_URI: ${MONGODB_URI:-mongodb://mongo:27017/cnpf_feeder}
+      AUTH_SECRET: ${AUTH_SECRET:-change_this_to_a_long_random_string}
+      PORT: 4000
+      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:3000}
+      GIN_MODE: ${GIN_MODE:-debug}
+    networks:
+      - cnpf-network
+
+  frontend:
+    build:
+      context: ../cnpf.feeder.md
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "3000:3000"
+    environment:
+      NEXT_PUBLIC_GRAPHQL_URL: ${NEXT_PUBLIC_GRAPHQL_URL:-http://localhost:4000/graphql}
+      NODE_ENV: production
+    networks:
+      - cnpf-network
+
+volumes:
+  mongo_data:
+
+networks:
+  cnpf-network:
+    driver: bridge

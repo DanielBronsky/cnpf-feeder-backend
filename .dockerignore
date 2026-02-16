@@ -1,0 +1,54 @@
+# Git
+.git
+.gitignore
+
+# Documentation
+*.md
+docs/
+
+# Docker
+Dockerfile
+docker-compose*.yml
+.dockerignore
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Build artifacts
+bin/
+dist/
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+server
+main
+
+# Test files
+*_test.go
+test/
+
+# Environment files (will be passed via docker-compose)
+.env
+.env.local
+.env.*.local
+
+# Node (if any)
+node_modules/
+package.json
+package-lock.json
+tsconfig.json
+eslint.config.mjs
+
+# Old structure (if exists)
+graphql/
+cmd/server/

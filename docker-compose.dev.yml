@@ -1,0 +1,29 @@
+# docker-compose.dev.yml
+# Только MongoDB для локальной разработки Backend
+# Использование: docker compose -f docker-compose.dev.yml up mongo -d
+
+services:
+  mongo:
+    image: mongo:7
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_dev_data:/data/db
+    networks:
+      - cnpf-dev-network
+    # Добавляем healthcheck для надежности
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+volumes:
+  mongo_dev_data:
+    driver: local
+
+networks:
+  cnpf-dev-network:
+    driver: bridge

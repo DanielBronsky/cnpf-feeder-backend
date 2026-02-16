@@ -1,0 +1,207 @@
+scalar Date
+scalar Upload
+
+type User {
+  id: ID!
+  email: String!
+  username: String!
+  isAdmin: Boolean!
+  hasAvatar: Boolean!
+  avatarUrl: String
+}
+
+type Author {
+  id: ID!
+  username: String!
+  hasAvatar: Boolean!
+  avatarUrl: String
+}
+
+type Photo {
+  url: String!
+}
+
+type Report {
+  id: ID!
+  title: String!
+  text: String!
+  createdAt: Date
+  updatedAt: Date
+  authorId: ID!
+  author: Author!
+  photos: [Photo!]!
+  canEdit: Boolean!
+}
+
+type Tour {
+  date: Date!
+  time: String!
+}
+
+type Competition {
+  id: ID!
+  title: String!
+  startDate: Date!
+  endDate: Date!
+  location: String!
+  tours: [Tour!]!
+  openingDate: Date
+  openingTime: String
+  individualFormat: Boolean!
+  teamFormat: Boolean!
+  fee: Float
+  teamLimit: Int
+  regulations: String
+  createdAt: Date
+  updatedAt: Date
+}
+
+type Participant {
+  firstName: String!
+  lastName: String!
+}
+
+type Coach {
+  firstName: String!
+  lastName: String!
+}
+
+type Registration {
+  id: ID!
+  competitionId: ID!
+  userId: ID!
+  type: String!
+  teamName: String
+  participants: [Participant!]!
+  coach: Coach
+  canEdit: Boolean!
+  createdAt: Date!
+  updatedAt: Date!
+}
+
+input TourInput {
+  date: String!
+  time: String!
+}
+
+input CompetitionInput {
+  title: String!
+  startDate: String!
+  endDate: String!
+  location: String!
+  tours: [TourInput!]!
+  openingDate: String
+  openingTime: String
+  individualFormat: Boolean!
+  teamFormat: Boolean!
+  fee: String
+  teamLimit: String
+  regulations: String
+}
+
+input RegisterInput {
+  email: String!
+  username: String!
+  password: String!
+  passwordConfirm: String!
+  avatar: Upload
+}
+
+input LoginInput {
+  login: String!
+  password: String!
+}
+
+input UpdateProfileInput {
+  username: String
+  removeAvatar: Boolean
+  avatar: Upload
+}
+
+input CreateReportInput {
+  title: String!
+  text: String!
+  photos: [Upload!]
+}
+
+input UpdateReportInput {
+  title: String
+  text: String
+  removePhoto: [Int!]
+  removeAllPhotos: Boolean
+  photos: [Upload!]
+}
+
+input ParticipantInput {
+  firstName: String!
+  lastName: String!
+}
+
+input CoachInput {
+  firstName: String!
+  lastName: String!
+}
+
+input CreateRegistrationInput {
+  competitionId: ID!
+  type: String!
+  teamName: String
+  participants: [ParticipantInput!]!
+  coach: CoachInput
+}
+
+input UpdateRegistrationInput {
+  teamName: String
+  participants: [ParticipantInput!]!
+  coach: CoachInput
+}
+
+type AuthResult {
+  ok: Boolean!
+  token: String
+}
+
+type ChatResult {
+  id: ID!
+  type: String!
+  title: String!
+  hasPhotos: Boolean!
+  photosCount: Int!
+  location: String
+}
+
+type ChatResponse {
+  message: String!
+  results: [ChatResult!]!
+}
+
+type Query {
+  me: User
+  reports(limit: Int): [Report!]!
+  report(id: ID!): Report
+  competitions: [Competition!]!
+  competition(id: ID!): Competition
+  adminUsers: [User!]!
+  adminUser(id: ID!): User
+  chat(query: String!): ChatResponse!
+  registrations(competitionId: ID!): [Registration!]!
+}
+
+type Mutation {
+  register(input: RegisterInput!): AuthResult!
+  login(input: LoginInput!): AuthResult!
+  logout: Boolean!
+  updateProfile(input: UpdateProfileInput!): User!
+  updatePassword(oldPassword: String!, newPassword: String!): Boolean!
+  createReport(input: CreateReportInput!): Report!
+  updateReport(id: ID!, input: UpdateReportInput!): Report!
+  deleteReport(id: ID!): Boolean!
+  createCompetition(input: CompetitionInput!): Competition!
+  updateCompetition(id: ID!, input: CompetitionInput!): Competition!
+  deleteCompetition(id: ID!): Boolean!
+  adminUpdateUser(id: ID!, isAdmin: Boolean): User!
+  adminDeleteUser(id: ID!): Boolean!
+  createRegistration(input: CreateRegistrationInput!): Registration!
+  updateRegistration(id: ID!, input: UpdateRegistrationInput!): Registration!
+  deleteRegistration(id: ID!): Boolean!
+}
