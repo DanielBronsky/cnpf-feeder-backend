@@ -39,7 +39,7 @@ jobs:
         run: go vet ./...
 
       - name: Build
-        run: go build -v ./cmd/graph
+        run: go build -v -o feeder-server ./cmd/graph
 
       - name: Test
         run: go test -v -race -count=1 ./...
