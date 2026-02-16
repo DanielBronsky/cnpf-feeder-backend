@@ -139,7 +139,11 @@ func (r *UserRepository) Create(ctx context.Context, user *entity.User) (string,
 		return "", err
 	}
 	
-	return result.InsertedID.(primitive.ObjectID).Hex(), nil
+	oid, ok := result.InsertedID.(primitive.ObjectID)
+	if !ok {
+		return "", fmt.Errorf("unexpected InsertedID type: %T", result.InsertedID)
+	}
+	return oid.Hex(), nil
 }
 
 // Update updates user fields

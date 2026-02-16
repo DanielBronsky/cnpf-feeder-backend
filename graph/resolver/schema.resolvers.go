@@ -173,9 +173,7 @@ func (r *mutationResolver) CreateReport(ctx context.Context, input model.CreateR
 
 	// Convert photos from bson.A to []interface{}
 	photosList := make([]interface{}, len(photos))
-	for i, photo := range photos {
-		photosList[i] = photo
-	}
+	copy(photosList, photos)
 
 	// Create entity.Report
 	reportEntity := &entity.Report{

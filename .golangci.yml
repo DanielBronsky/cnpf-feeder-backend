@@ -17,5 +17,5 @@ linters-settings:
   errcheck:
     check-type-assertions: true
     check-blank: true
-  staticcheck:
-    checks: ["-S1001"] # цикл с model.Photo трансформирует, copy() не подходит
+    exclude-functions:
+      - (*go.mongodb.org/mongo-driver/mongo.Cursor).Close

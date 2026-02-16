@@ -125,7 +125,11 @@ func (r *RegistrationRepository) Create(ctx context.Context, reg *entity.Registr
 		return "", fmt.Errorf("failed to create registration: %w", err)
 	}
 
-	return result.InsertedID.(primitive.ObjectID).Hex(), nil
+	oid, ok := result.InsertedID.(primitive.ObjectID)
+	if !ok {
+		return "", fmt.Errorf("unexpected InsertedID type: %T", result.InsertedID)
+	}
+	return oid.Hex(), nil
 }
 
 // FindByID finds a registration by ID

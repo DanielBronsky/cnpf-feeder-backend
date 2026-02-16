@@ -55,11 +55,13 @@ func (doc *CompetitionDocument) toEntity() *entity.Competition {
 	tours := make([]entity.Tour, len(doc.Tours))
 	for i, tourRaw := range doc.Tours {
 		if tourDoc, ok := tourRaw.(bson.M); ok {
-			tourDate := tourDoc["date"].(primitive.DateTime).Time()
-			tourTime := tourDoc["time"].(string)
-			tours[i] = entity.Tour{
-				Date: tourDate,
-				Time: tourTime,
+			tourDateVal, okDate := tourDoc["date"].(primitive.DateTime)
+			tourTimeVal, okTime := tourDoc["time"].(string)
+			if okDate && okTime {
+				tours[i] = entity.Tour{
+					Date: tourDateVal.Time(),
+					Time: tourTimeVal,
+				}
 			}
 		}
 	}
@@ -170,8 +172,12 @@ func (r *CompetitionRepository) Create(ctx context.Context, competition *entity.
 	if err != nil {
 		return "", err
 	}
-	
-	return result.InsertedID.(primitive.ObjectID).Hex(), nil
+
+	oid, ok := result.InsertedID.(primitive.ObjectID)
+	if !ok {
+		return "", fmt.Errorf("unexpected InsertedID type: %T", result.InsertedID)
+	}
+	return oid.Hex(), nil
 }
 
 // FindByID finds a competition by ID

@@ -42,9 +42,7 @@ type ReportDocument struct {
 // toEntity converts MongoDB document to domain entity
 func (doc *ReportDocument) toEntity() *entity.Report {
 	photos := make([]interface{}, len(doc.Photos))
-	for i, photo := range doc.Photos {
-		photos[i] = photo
-	}
+	copy(photos, doc.Photos)
 	
 	return &entity.Report{
 		ID:        doc.ID.Hex(),
@@ -111,7 +109,11 @@ func (r *ReportRepository) Create(ctx context.Context, report *entity.Report) (s
 		return "", err
 	}
 	
-	return result.InsertedID.(primitive.ObjectID).Hex(), nil
+	oid, ok := result.InsertedID.(primitive.ObjectID)
+	if !ok {
+		return "", fmt.Errorf("unexpected InsertedID type: %T", result.InsertedID)
+	}
+	return oid.Hex(), nil
 }
 
 // FindByID finds a report by ID

@@ -38,27 +38,44 @@ func formatUser(userDoc *mongodb.UserDocument) *model.User {
 	}
 }
 
+// getBsonString safely extracts string from bson.M
+func getBsonString(doc bson.M, key string) string {
+	if v, ok := doc[key].(string); ok {
+		return v
+	}
+	return ""
+}
+
+// getBsonBool safely extracts bool from bson.M
+func getBsonBool(doc bson.M, key string) bool {
+	if v, ok := doc[key].(bool); ok {
+		return v
+	}
+	return false
+}
+
 // formatUserFromBSON converts BSON document to GraphQL User model
 func formatUserFromBSON(userDoc bson.M) *model.User {
-	userID := userDoc["_id"].(primitive.ObjectID).Hex()
-	hasAvatar := false
-	if h, ok := userDoc["hasAvatar"].(bool); ok {
-		hasAvatar = h
+	objID, ok := userDoc["_id"].(primitive.ObjectID)
+	if !ok {
+		return nil
 	}
+	userID := objID.Hex()
+	hasAvatar := getBsonBool(userDoc, "hasAvatar")
 	var avatarURL *string
 	if hasAvatar {
 		url := fmt.Sprintf("/api/user/avatar/%s", userID)
 		avatarURL = &url
 	}
-	username := userDoc["username"].(string)
+	username := getBsonString(userDoc, "username")
 	if username == "" {
-		username = userDoc["email"].(string)
+		username = getBsonString(userDoc, "email")
 	}
 	return &model.User{
 		ID:        userID,
-		Email:     userDoc["email"].(string),
+		Email:     getBsonString(userDoc, "email"),
 		Username:  username,
-		IsAdmin:   userDoc["isAdmin"].(bool),
+		IsAdmin:   getBsonBool(userDoc, "isAdmin"),
 		HasAvatar: hasAvatar,
 		AvatarURL: avatarURL,
 	}
@@ -66,14 +83,11 @@ func formatUserFromBSON(userDoc bson.M) *model.User {
 
 // formatAuthor converts MongoDB user document to GraphQL Author model
 func formatAuthor(userDoc bson.M, authorID string) *model.Author {
-	authorUsername := userDoc["username"].(string)
+	authorUsername := getBsonString(userDoc, "username")
 	if authorUsername == "" {
-		authorUsername = userDoc["email"].(string)
+		authorUsername = getBsonString(userDoc, "email")
 	}
-	authorHasAvatar := false
-	if h, ok := userDoc["hasAvatar"].(bool); ok {
-		authorHasAvatar = h
-	}
+	authorHasAvatar := getBsonBool(userDoc, "hasAvatar")
 	var authorAvatarURL *string
 	if authorHasAvatar {
 		url := fmt.Sprintf("/api/user/avatar/%s", authorID)
@@ -89,8 +103,16 @@ func formatAuthor(userDoc bson.M, authorID string) *model.Author {
 
 // formatReport converts MongoDB report document to GraphQL Report model
 func (r *Resolver) formatReport(ctx context.Context, reportDoc bson.M, currentUser *auth.CurrentUser) (*model.Report, error) {
-	reportID := reportDoc["_id"].(primitive.ObjectID).Hex()
-	authorID := reportDoc["authorId"].(primitive.ObjectID).Hex()
+	reportOID, ok := reportDoc["_id"].(primitive.ObjectID)
+	if !ok {
+		return nil, fmt.Errorf("invalid report _id")
+	}
+	reportID := reportOID.Hex()
+	authorOID, ok := reportDoc["authorId"].(primitive.ObjectID)
+	if !ok {
+		return nil, fmt.Errorf("invalid report authorId")
+	}
+	authorID := authorOID.Hex()
 
 	// Get author
 	db, err := mongodb.GetDB()
@@ -142,8 +164,8 @@ func (r *Resolver) formatReport(ctx context.Context, reportDoc bson.M, currentUs
 
 	return &model.Report{
 		ID:        reportID,
-		Title:     reportDoc["title"].(string),
-		Text:      reportDoc["text"].(string),
+		Title:     getBsonString(reportDoc, "title"),
+		Text:      getBsonString(reportDoc, "text"),
 		CreatedAt: createdAt,
 		UpdatedAt: updatedAt,
 		AuthorID:  authorID,
@@ -155,25 +177,43 @@ func (r *Resolver) formatReport(ctx context.Context, reportDoc bson.M, currentUs
 
 // formatCompetition converts MongoDB competition document to GraphQL Competition model
 func formatCompetition(competitionDoc bson.M) (*model.Competition, error) {
-	competitionID := competitionDoc["_id"].(primitive.ObjectID).Hex()
+	compOID, ok := competitionDoc["_id"].(primitive.ObjectID)
+	if !ok {
+		return nil, fmt.Errorf("invalid competition _id")
+	}
+	competitionID := compOID.Hex()
 
 	// Format tours
 	tours := []*model.Tour{}
 	if toursArray, ok := competitionDoc["tours"].(bson.A); ok {
 		for _, tourRaw := range toursArray {
-			tourDoc := tourRaw.(bson.M)
-			tourDate := tourDoc["date"].(primitive.DateTime)
-			tourTime := tourDoc["time"].(string)
+			tourDoc, ok := tourRaw.(bson.M)
+			if !ok {
+				continue
+			}
+			tourDateVal, okDate := tourDoc["date"].(primitive.DateTime)
+			tourTimeVal, okTime := tourDoc["time"].(string)
+			if !okDate || !okTime {
+				continue
+			}
 			tours = append(tours, &model.Tour{
-				Date: scalars.Time(time.Unix(int64(tourDate)/1000, 0)),
-				Time: tourTime,
+				Date: scalars.Time(time.Unix(int64(tourDateVal)/1000, 0)),
+				Time: tourTimeVal,
 			})
 		}
 	}
 
 	// Format dates
-	startDate := scalars.Time(time.Unix(int64(competitionDoc["startDate"].(primitive.DateTime))/1000, 0))
-	endDate := scalars.Time(time.Unix(int64(competitionDoc["endDate"].(primitive.DateTime))/1000, 0))
+	sd, ok := competitionDoc["startDate"].(primitive.DateTime)
+	if !ok {
+		return nil, fmt.Errorf("invalid competition startDate")
+	}
+	ed, ok := competitionDoc["endDate"].(primitive.DateTime)
+	if !ok {
+		return nil, fmt.Errorf("invalid competition endDate")
+	}
+	startDate := scalars.Time(time.Unix(int64(sd)/1000, 0))
+	endDate := scalars.Time(time.Unix(int64(ed)/1000, 0))
 
 	var openingDate *scalars.Time
 	if od, ok := competitionDoc["openingDate"].(primitive.DateTime); ok {
@@ -216,15 +256,15 @@ func formatCompetition(competitionDoc bson.M) (*model.Competition, error) {
 
 	return &model.Competition{
 		ID:               competitionID,
-		Title:            competitionDoc["title"].(string),
+		Title:            getBsonString(competitionDoc, "title"),
 		StartDate:        startDate,
 		EndDate:          endDate,
-		Location:         competitionDoc["location"].(string),
+		Location:         getBsonString(competitionDoc, "location"),
 		Tours:            tours,
 		OpeningDate:      openingDate,
 		OpeningTime:      openingTime,
-		IndividualFormat: competitionDoc["individualFormat"].(bool),
-		TeamFormat:       competitionDoc["teamFormat"].(bool),
+		IndividualFormat: getBsonBool(competitionDoc, "individualFormat"),
+		TeamFormat:       getBsonBool(competitionDoc, "teamFormat"),
 		Fee:              fee,
 		TeamLimit:        teamLimit,
 		Regulations:      regulations,
