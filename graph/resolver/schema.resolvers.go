@@ -81,6 +81,16 @@ func (r *mutationResolver) Logout(ctx context.Context) (bool, error) {
 	return result, nil
 }
 
+// RequestPasswordReset is the resolver for the requestPasswordReset field.
+func (r *mutationResolver) RequestPasswordReset(ctx context.Context, email string) (bool, error) {
+	return r.useCase.RequestPasswordReset(ctx, email)
+}
+
+// ResetPassword is the resolver for the resetPassword field.
+func (r *mutationResolver) ResetPassword(ctx context.Context, token string, newPassword string, confirmPassword string) (bool, error) {
+	return r.useCase.ResetPassword(ctx, token, newPassword, confirmPassword)
+}
+
 // UpdateProfile is the resolver for the updateProfile field.
 func (r *mutationResolver) UpdateProfile(ctx context.Context, input model.UpdateProfileInput) (*model.User, error) {
 	// Extract userID from context

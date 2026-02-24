@@ -2,8 +2,11 @@ package usecase
 
 import (
 	"context"
+	"crypto/rand"
+	"encoding/hex"
 	"fmt"
 	"io"
+	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -13,6 +16,7 @@ import (
 	"github.com/cnpf/feeder-backend/internal/auth"
 	"github.com/cnpf/feeder-backend/internal/domain/entity"
 	apperrors "github.com/cnpf/feeder-backend/internal/errors"
+	"github.com/cnpf/feeder-backend/internal/mail"
 	"github.com/cnpf/feeder-backend/internal/repository/interface"
 	"github.com/cnpf/feeder-backend/internal/validation"
 )
@@ -20,10 +24,11 @@ import (
 // UseCaseImpl implements UseCase interface
 // Uses repository interfaces (dependency inversion)
 type UseCaseImpl struct {
-	userRepo         repository.UserRepository
-	reportRepo       repository.ReportRepository
-	competitionRepo  repository.CompetitionRepository
-	registrationRepo repository.RegistrationRepository
+	userRepo            repository.UserRepository
+	reportRepo          repository.ReportRepository
+	competitionRepo     repository.CompetitionRepository
+	registrationRepo    repository.RegistrationRepository
+	passwordResetRepo   repository.PasswordResetRepository
 }
 
 // NewUseCase creates a new use case implementation
@@ -32,12 +37,14 @@ func NewUseCase(
 	reportRepo repository.ReportRepository,
 	competitionRepo repository.CompetitionRepository,
 	registrationRepo repository.RegistrationRepository,
+	passwordResetRepo repository.PasswordResetRepository,
 ) UseCase {
 	return &UseCaseImpl{
-		userRepo:         userRepo,
-		reportRepo:       reportRepo,
-		competitionRepo:  competitionRepo,
-		registrationRepo: registrationRepo,
+		userRepo:          userRepo,
+		reportRepo:        reportRepo,
+		competitionRepo:   competitionRepo,
+		registrationRepo:  registrationRepo,
+		passwordResetRepo: passwordResetRepo,
 	}
 }
 
@@ -130,8 +137,9 @@ func (u *UseCaseImpl) Login(ctx context.Context, login, password string) (*model
 	if err := validation.ValidateLoginInput(login, password); err != nil {
 		return nil, apperrors.WrapError("Неверные входные данные", err)
 	}
+	login = strings.TrimSpace(strings.ToLower(login))
 
-	// Find user
+	// Find user by email OR username
 	user, err := u.userRepo.FindByEmailOrUsername(ctx, login, login)
 	if err != nil {
 		return nil, fmt.Errorf("Неверный email или пароль")
@@ -279,6 +287,73 @@ func (u *UseCaseImpl) UpdatePassword(ctx context.Context, userID string, oldPass
 		return false, apperrors.WrapError("Не удалось обновить пароль", err)
 	}
 
+	return true, nil
+}
+
+// RequestPasswordReset creates a reset token and sends email. Always returns ok (don't reveal if email exists).
+func (u *UseCaseImpl) RequestPasswordReset(ctx context.Context, email string) (bool, error) {
+	email = strings.TrimSpace(strings.ToLower(email))
+	if len(email) < 3 || len(email) > 254 {
+		return true, nil // Silently succeed - don't reveal
+	}
+
+	user, err := u.userRepo.FindByEmailOrUsername(ctx, email, email)
+	if err != nil {
+		return true, nil
+	}
+
+	tokenBytes := make([]byte, 32)
+	if _, err := rand.Read(tokenBytes); err != nil {
+		return true, nil
+	}
+	token := hex.EncodeToString(tokenBytes)
+	expiresAt := time.Now().Add(1 * time.Hour)
+
+	if err := u.passwordResetRepo.Save(ctx, user.ID, token, expiresAt); err != nil {
+		return true, nil
+	}
+
+	frontendURL := os.Getenv("FRONTEND_URL")
+	if frontendURL == "" {
+		frontendURL = "http://localhost:3000"
+	}
+	resetLink := fmt.Sprintf("%s/auth/reset-password?token=%s", strings.TrimSuffix(frontendURL, "/"), token)
+
+	if err := mail.SendResetEmail(user.Email, resetLink); err != nil {
+		// Log but don't fail - user might not have RESEND configured
+		return true, nil
+	}
+	return true, nil
+}
+
+// ResetPassword validates token and sets new password.
+func (u *UseCaseImpl) ResetPassword(ctx context.Context, token, newPassword, confirmPassword string) (bool, error) {
+	if err := validation.ValidatePassword(newPassword); err != nil {
+		return false, err
+	}
+	if newPassword != confirmPassword {
+		return false, fmt.Errorf("Пароли не совпадают")
+	}
+
+	userID, err := u.passwordResetRepo.GetByToken(ctx, token)
+	if err != nil {
+		return false, fmt.Errorf("Ссылка устарела или недействительна")
+	}
+
+	passwordHash, err := auth.HashPassword(newPassword)
+	if err != nil {
+		return false, apperrors.WrapError("Не удалось обновить пароль", err)
+	}
+
+	user, err := u.userRepo.FindByID(ctx, userID)
+	if err != nil {
+		return false, fmt.Errorf("Пользователь не найден")
+	}
+	user.PasswordHash = passwordHash
+	if err := u.userRepo.Update(ctx, userID, user); err != nil {
+		return false, apperrors.WrapError("Не удалось обновить пароль", err)
+	}
+	_ = u.passwordResetRepo.DeleteByToken(ctx, token)
 	return true, nil
 }
 

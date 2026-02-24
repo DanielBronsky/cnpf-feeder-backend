@@ -89,10 +89,7 @@ func (c *Client) GenerateContent(prompt string) (string, error) {
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		body, err := io.ReadAll(resp.Body)
-		if err != nil {
-			return "", fmt.Errorf("API returned status %d (body read failed: %w)", resp.StatusCode, err)
-		}
+		body, _ := io.ReadAll(resp.Body)
 		return "", fmt.Errorf("API returned status %d: %s", resp.StatusCode, string(body))
 	}
 
@@ -192,7 +189,7 @@ func (c *Client) ExtractSearchQuery(userQuery string) (string, error) {
 "Отчет о Днестре" -> raport dnestr nistru
 "Lacul Danceni" -> lacul danceni
 
-Верни ТОЛЬКО ключевые слова (без кавычек, без объяснений):`, userQuery)
+Верни ТОЛЬКО ключевые слова (без кавычек, без объяснений):`)
 
 	result, err := c.GenerateContent(prompt)
 	if err != nil {

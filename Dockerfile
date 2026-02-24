@@ -12,23 +12,14 @@ RUN apk add --no-cache git
 
 # Copy go mod files first for better caching
 COPY go.mod go.sum ./
-RUN go mod download && go mod tidy
-
-# Install gqlgen and all its dependencies explicitly
-RUN go get -d github.com/99designs/gqlgen@latest && \
-    go get golang.org/x/tools/go/packages && \
-    go get golang.org/x/tools/go/ast/astutil && \
-    go get golang.org/x/tools/imports && \
-    go get github.com/goccy/go-yaml && \
-    go get github.com/urfave/cli/v3 && \
-    go mod tidy
+RUN go mod download
 
 # Copy source code
 COPY . .
 
-# Generate GraphQL code
-RUN cd graph && \
-    go run github.com/99designs/gqlgen@latest generate
+# Install and run gqlgen for code generation (версия из go.mod)
+RUN go install github.com/99designs/gqlgen@v0.17.86 && \
+    cd graph && gqlgen generate
 
 # Build the application
 RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o main ./cmd/graph

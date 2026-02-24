@@ -52,9 +52,10 @@ func main() {
 	reportRepo := mongodb.NewReportRepository(db)
 	competitionRepo := mongodb.NewCompetitionRepository(db)
 	registrationRepo := mongodb.NewRegistrationRepository(db)
+	passwordResetRepo := mongodb.NewPasswordResetRepository(db)
 
 	// Initialize use case (application layer) - uses repository interfaces
-	useCase := usecase.NewUseCase(userRepo, reportRepo, competitionRepo, registrationRepo)
+	useCase := usecase.NewUseCase(userRepo, reportRepo, competitionRepo, registrationRepo, passwordResetRepo)
 
 	// Initialize resolver (presentation layer) - uses use case
 	// TEMPORARY: Passing repositories for backward compatibility during migration

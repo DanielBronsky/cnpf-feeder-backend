@@ -191,6 +191,8 @@ type Mutation {
   register(input: RegisterInput!): AuthResult!
   login(input: LoginInput!): AuthResult!
   logout: Boolean!
+  requestPasswordReset(email: String!): Boolean!
+  resetPassword(token: String!, newPassword: String!, confirmPassword: String!): Boolean!
   updateProfile(input: UpdateProfileInput!): User!
   updatePassword(oldPassword: String!, newPassword: String!): Boolean!
   createReport(input: CreateReportInput!): Report!

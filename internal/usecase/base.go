@@ -14,6 +14,8 @@ type UseCase interface {
 	Register(ctx context.Context, email, username, password, passwordConfirm string, avatar *PhotoUpload) (*model.AuthResult, error)
 	Login(ctx context.Context, login, password string) (*model.AuthResult, error)
 	Logout(ctx context.Context) (bool, error)
+	RequestPasswordReset(ctx context.Context, email string) (bool, error)
+	ResetPassword(ctx context.Context, token, newPassword, confirmPassword string) (bool, error)
 	
 	// User
 	GetCurrentUser(ctx context.Context, userID string) (*model.User, error)

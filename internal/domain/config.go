@@ -17,6 +17,9 @@ type Config struct {
 	
 	// Auth
 	AuthSecret   string
+
+	// Mail
+	FrontendURL  string
 	
 	// Logging
 	LogLevel     string
@@ -31,6 +34,7 @@ func LoadConfig() *Config {
 		MongoDBURI:  getEnv("MONGODB_URI", ""),
 		MongoDBName: getEnv("MONGODB_NAME", ""),
 		AuthSecret:  getEnv("AUTH_SECRET", ""),
+		FrontendURL: getEnv("FRONTEND_URL", "http://localhost:3000"),
 		LogLevel:    getEnv("LOGLEVEL", "info"),
 	}
 }
