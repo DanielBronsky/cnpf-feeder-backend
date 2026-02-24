@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"io"
+	"log"
 	"os"
 	"strconv"
 	"strings"
@@ -354,7 +355,7 @@ func (u *UseCaseImpl) ResetPassword(ctx context.Context, token, newPassword, con
 		return false, apperrors.WrapError("Не удалось обновить пароль", err)
 	}
 	if err := u.passwordResetRepo.DeleteByToken(ctx, token); err != nil {
-		// Token already used, cleanup failed — non-critical
+		log.Printf("[ResetPassword] failed to delete used token: %v", err)
 	}
 	return true, nil
 }
