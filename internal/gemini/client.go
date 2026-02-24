@@ -189,7 +189,7 @@ func (c *Client) ExtractSearchQuery(userQuery string) (string, error) {
 "Отчет о Днестре" -> raport dnestr nistru
 "Lacul Danceni" -> lacul danceni
 
-Верни ТОЛЬКО ключевые слова (без кавычек, без объяснений):`)
+Верни ТОЛЬКО ключевые слова (без кавычек, без объяснений):`, userQuery)
 
 	result, err := c.GenerateContent(prompt)
 	if err != nil {
