@@ -89,7 +89,10 @@ func (c *Client) GenerateContent(prompt string) (string, error) {
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		body, _ := io.ReadAll(resp.Body)
+		body, err := io.ReadAll(resp.Body)
+		if err != nil {
+			return "", fmt.Errorf("API returned status %d (body read failed: %w)", resp.StatusCode, err)
+		}
 		return "", fmt.Errorf("API returned status %d: %s", resp.StatusCode, string(body))
 	}
 

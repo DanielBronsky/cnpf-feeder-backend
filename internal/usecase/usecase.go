@@ -353,7 +353,9 @@ func (u *UseCaseImpl) ResetPassword(ctx context.Context, token, newPassword, con
 	if err := u.userRepo.Update(ctx, userID, user); err != nil {
 		return false, apperrors.WrapError("Не удалось обновить пароль", err)
 	}
-	_ = u.passwordResetRepo.DeleteByToken(ctx, token)
+	if err := u.passwordResetRepo.DeleteByToken(ctx, token); err != nil {
+		// Token already used, cleanup failed — non-critical
+	}
 	return true, nil
 }
 
